@@ -1,0 +1,2 @@
+websockets>=16,<18
+PyAudioWPatch==0.2.12.9; sys_platform == "win32"

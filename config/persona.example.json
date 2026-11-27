@@ -1,0 +1,44 @@
+{
+  "active": "sap-tech-lead",
+  "note": "这是虚构练习素材。复制为 persona.json 后按本人经历替换；persona.json 已被 .gitignore 排除。",
+  "personas": {
+    "sap-tech-lead": {
+      "label": "示例：SAP 开发者",
+      "target_role": "SAP 技术顾问（ABAP / BTP）",
+      "years": "",
+      "domain": "练习环境中的后台报表开发",
+      "stack": ["SAP ABAP", "CDS / OData"],
+      "highlights": [
+        "在练习环境中实现库存查询报表",
+        "用虚构数据验证空结果和无权限访问两个场景"
+      ],
+      "constraints": [
+        "说明这是练习项目",
+        "仅描述已完成的实现与验证"
+      ],
+      "style": "简洁、工程师口吻，先结论后依据，不用套话；每条回答控制在 60 秒口述长度",
+      "examples": [
+        {
+          "q": "怎样验证你做的报表？",
+          "a": "我用虚构库存数据验证了筛选功能，也测了空结果和权限不足两种情况。这样可以分别检查数据查询和错误提示。"
+        }
+      ]
+    },
+    "btp-cap-dev": {
+      "label": "示例：BTP CAP 应用开发",
+      "target_role": "BTP CAP 后端开发",
+      "years": "",
+      "domain": "练习环境中的服务接口",
+      "stack": ["SAP BTP CAP", "Node.js / TypeScript"],
+      "highlights": [
+        "用虚构数据实现图书借阅接口",
+        "验证库存不足时的返回值和提示文案"
+      ],
+      "constraints": [
+        "仅描述实际练习过的 BTP 服务"
+      ],
+      "style": "偏实现细节，讲清数据模型和接口边界，语气平实",
+      "examples": []
+    }
+  }
+}

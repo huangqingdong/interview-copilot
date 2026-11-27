@@ -1,0 +1,14 @@
+/.env*
+/config/.env*
+!/config/.env.example
+config/persona.json
+config/app.json
+config/access.txt
+config/*.local.json
+kb/*
+!kb/.gitkeep
+!kb/*.example
+runtime/
+logs/
+__pycache__/
+*.pyc

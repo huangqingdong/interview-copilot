@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "active": "azure-cn-qwen",
+  "defaults": {
+    "speech": {
+      "source_languages": [
+        "zh-CN",
+        "en-US"
+      ],
+      "translation_target": "zh-Hans",
+      "phrase_list": [
+        "SAP",
+        "ABAP",
+        "BTP",
+        "CAP",
+        "CPI",
+        "BAdI"
+      ],
+      "vad_silence_ms": 500
+    },
+    "llm": {
+      "temperature": 0.3,
+      "max_tokens": 1600,
+      "response_format": "json_object",
+      "timeout_s": 20,
+      "answer_schema": [
+        "answer_zh",
+        "answer_en"
+      ]
+    }
+  },
+  "speech_providers": {
+    "azure-cn": {
+      "type": "azure_speech_translation",
+      "api_key": "${AZURE_SPEECH_KEY_CN}",
+      "region": "${AZURE_SPEECH_REGION_CN}",
+      "endpoint": "",
+      "stt_url": "",
+      "note": "中国区（世纪互联），国内直连。地址优先级：stt_url 完整识别地址 > endpoint 门户资源域名（自动换成 stt.speech.*）> region 拼官方域名。走代理 / APIM 网关时填 stt_url，端口、路径与查询串原样保留"
+    },
+    "azure-global": {
+      "type": "azure_speech_translation",
+      "api_key": "${AZURE_SPEECH_KEY_GLOBAL}",
+      "region": "${AZURE_SPEECH_REGION_GLOBAL}",
+      "endpoint": "",
+      "stt_url": "",
+      "note": "全球区，key / region 与中国区不通用；stt_url 填完整识别地址可绕过 region 推导"
+    },
+    "openai-stt": {
+      "type": "openai_compatible_stt",
+      "api_key": "${OPENAI_STT_API_KEY}",
+      "region": "",
+      "endpoint": "",
+      "stt_url": "",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "model": "whisper-large-v3",
+      "note": "任意 OpenAI 兼容 /audio/transcriptions 服务（自建 Whisper / 国内 ASR 网关）。base_url 填到 /v1，程序自动补 /audio/transcriptions；model 与 key 按服务商控制台改。multipart 上传 WAV + Bearer 鉴权，取返回 JSON 的 text 字段"
+    },
+    "generic-asr": {
+      "type": "generic_http_stt",
+      "api_key": "${COPILOT_SPEECH_GENERIC_ASR_KEY}",
+      "stt_url": "http://127.0.0.1:8000/asr",
+      "stt_method": "POST",
+      "stt_headers": "{\"Authorization\": \"Bearer ${COPILOT_SPEECH_GENERIC_ASR_KEY}\"}",
+      "stt_body": "multipart",
+      "audio_field": "file",
+      "stt_extra": "{\"model\": \"paraformer\", \"format\": \"wav\"}",
+      "response_path": "data.text",
+      "stt_lang_query": "language",
+      "model": "",
+      "note": "任意 HTTP ASR 模板（国内 ASR 网关 / 自建 FunASR 等）。请求头、请求体、额外业务字段、语种参数名、响应文本路径都可改；密钥用 ${...} 占位引用，在配置页「新密钥」填入即写入 .env。不生效，仅作模板；改完在顶栏「ASR」选它即可，LLM 侧完全不用动"
+    },
+    "bailian-qwen-asr": {
+      "type": "generic_http_stt",
+      "api_key": "${COPILOT_SPEECH_BAILIAN_QWEN_ASR_KEY}",
+      "stt_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "stt_method": "POST",
+      "stt_headers": "{\"Authorization\": \"Bearer ${COPILOT_SPEECH_BAILIAN_QWEN_ASR_KEY}\", \"Content-Type\": \"application/json\"}",
+      "stt_body": "json_template",
+      "stt_json_template": "{\"model\": \"qwen3-asr-flash\", \"messages\": [{\"role\": \"user\", \"content\": [{\"type\": \"input_audio\", \"input_audio\": {\"data\": \"{{audio_data_uri}}\"}}]}], \"stream\": false, \"asr_options\": {\"enable_itn\": false}}",
+      "audio_field": "",
+      "stt_extra": "{}",
+      "response_path": "choices.0.message.content",
+      "stt_lang_query": "",
+      "model": "qwen3-asr-flash",
+      "note": "阿里云百炼非实时语音识别 qwen3-asr-flash（OpenAI 兼容 chat/completions）。断句后一段 WAV 转 Data URI 放进 input_audio.data，同步返回 choices.0.message.content。北京地域用 dashscope.aliyuncs.com；换成业务空间专属域名时把 stt_url 改成 https://业务空间ID.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions；新加坡地域用 dashscope-intl.aliyuncs.com，且北京与新加坡的 API Key 不通用。模板里不指定 asr_options.language，让模型自动判中英；要强制语种可在 asr_options 里加 \"language\": \"{{lang_short}}\"。不生效，仅作模板：在配置页「新密钥」填百炼 API Key，再到顶栏 ASR 选它，LLM 侧完全不用动"
+    },
+    "bailian-qwen-realtime": {
+      "type": "qwen_realtime_stt",
+      "api_key": "${COPILOT_SPEECH_BAILIAN_QWEN_ASR_KEY}",
+      "stt_url": "",
+      "model": "qwen3-asr-flash-realtime",
+      "note": "百炼流式转写。北京地域填 wss://<WorkspaceId>.cn-beijing.maas.aliyuncs.com/api-ws/v1/realtime。默认复用百炼整段 ASR 的密钥，也可在编辑窗口填新密钥。"
+    },
+    "qwen-audio-3.1-asr-flash": {
+      "type": "generic_http_stt",
+      "api_key": "${COPILOT_SPEECH_BAILIAN_QWEN_ASR_KEY}",
+      "stt_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+      "stt_method": "POST",
+      "stt_headers": "{\"Authorization\": \"Bearer ${COPILOT_SPEECH_BAILIAN_QWEN_ASR_KEY}\", \"Content-Type\": \"application/json\", \"X-DashScope-SSE\": \"disable\"}",
+      "stt_body": "json_template",
+      "stt_json_template": "{\"model\": \"qwen-audio-3.1-asr-flash\", \"input\": {\"messages\": [{\"role\": \"user\", \"content\": [{\"type\": \"input_audio\", \"input_audio\": {\"data\": \"{{audio_data_uri}}\"}}]}]}, \"parameters\": {\"format\": \"wav\", \"sample_rate\": \"16000\"}}",
+      "audio_field": "",
+      "stt_extra": "{}",
+      "response_path": "output.text",
+      "stt_lang_query": "",
+      "model": "qwen-audio-3.1-asr-flash",
+      "note": "阿里云百炼 Qwen-Audio-3.1 非实时 ASR（DashScope 原生 multimodal-generation/generation），和 qwen3-asr-flash 不是同一个协议：请求体是 input.messages 加 parameters，响应取 output.text，没有 choices。复用已填的百炼北京 API Key，无需另填密钥。断句后整段 16k 单声道 WAV 转 data:audio/wav;base64, 形式的 Data URI 放进 input_audio.data，同步返回；请求头 X-DashScope-SSE: disable 关闭流式。北京地域用 dashscope.aliyuncs.com；若 404 换成业务空间专属域名 https://业务空间ID.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation。可在 parameters 里加 vocabulary 热词（SAP、ABAP、BAdI）提升专有名词命中。同一批的 -streaming / -message 走 WebSocket 二进制流、-filetrans 走异步任务轮询，本 app 的整段 WAV 同步链路接不了。纯静音或无词音频会返回 400 ASR_RESPONSE_HAVE_NO_WORDS，程序按空识别处理。只加不启用：在顶栏 ASR 选它即可，LLM 侧不用动",
+      "base_url": "",
+      "region": "",
+      "endpoint": "",
+      "device": ""
+    },
+    "local-whisper": {
+      "type": "faster_whisper",
+      "api_key": "",
+      "region": "",
+      "endpoint": "",
+      "model": "large-v3",
+      "device": "auto",
+      "note": "全离线，音频不出本机；首包延迟与中英混说识别弱于云端"
+    }
+  },
+  "llm_providers": {
+    "qwen": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${QWEN_API_KEY}",
+      "model": "qwen-plus",
+      "supports_json_mode": true,
+      "note": "阿里云百炼/通义千问。旧域名仍可用；2026-10 起官方建议迁到业务空间专属域名 https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1，注意 API Key 按地域绑定。模型名按控制台改，如 qwen3.x 系列"
+    },
+    "qwen3.8-27b": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "qwen3.8-27b",
+      "supports_json_mode": true,
+      "note": "百炼控制台模型，和 qwen 共用端点与 API Key（COPILOT_LLM_QWEN_KEY），只换 model 名；无需另填密钥。2026-11-10 实测兼容端点 + json_object 可用"
+    },
+    "qwen3.8-flash": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "qwen3.8-flash",
+      "supports_json_mode": true,
+      "note": "百炼千问快档，面试实时回答优先选它；和 qwen 共用端点与密钥，无需另填。2026-11-10 实测兼容端点 + json_object 可用"
+    },
+    "kimi-k3": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "kimi-k3",
+      "supports_json_mode": true,
+      "note": "百炼聚合的 Kimi（非月之暗面官方端点），和 qwen 共用端点与密钥。该模型只接受 temperature=0 或 1，0.3 会报 400，故固定为 0。2026-11-10 实测可用",
+      "temperature": 0
+    },
+    "kimi-k3.1-pro": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "kimi-k3.1-pro",
+      "supports_json_mode": true,
+      "note": "百炼聚合的 Kimi 推理档，会先产生 reasoning_content，延迟高于快档；max_tokens 不要低于 600。同 kimi-k3 一样只接受 temperature=0 或 1。和 qwen 共用端点与密钥。2026-11-10 实测可用",
+      "temperature": 0
+    },
+    "qwen3.8-max-0902": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "qwen3.8-max-0902",
+      "supports_json_mode": true,
+      "note": "百炼千问 Max 快照版（带日期后缀，以控制台模型 Code 为准），和 qwen 共用端点与密钥。2026-11-10 实测兼容端点 + json_object 可用"
+    },
+    "deepseek-v4.1-flash-1017": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "deepseek-v4.1-flash-1017",
+      "supports_json_mode": true,
+      "note": "百炼原厂直供 DeepSeek 快档快照版，和 qwen 共用端点与密钥，不要填成 DeepSeek 官方 api.deepseek.com。2026-11-10 实测兼容端点 + json_object 可用"
+    },
+    "deepseek-v4.1-flash": {
+      "type": "openai_compatible",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "${COPILOT_LLM_QWEN_KEY}",
+      "model": "deepseek-v4.1-flash",
+      "supports_json_mode": true,
+      "note": "百炼原厂直供 DeepSeek 快档，和 qwen 共用端点与密钥，不要填成 DeepSeek 官方 api.deepseek.com。2026-11-10 实测兼容端点 + json_object 可用"
+    },
+    "deepseek": {
+      "type": "openai_compatible",
+      "base_url": "https://api.deepseek.com",
+      "api_key": "${DEEPSEEK_API_KEY}",
+      "model": "deepseek-flash",
+      "supports_json_mode": true,
+      "note": "DeepSeek 官方 OpenAI 兼容端点（聊天路径就是根域名 + /chat/completions）。deepseek-flash 为当前快档（V4.1-Flash）；deepseek-v4-pro 为推理档，面试场景会因思考拖慢，不建议用"
+    },
+    "glm": {
+      "type": "openai_compatible",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "api_key": "${GLM_API_KEY}",
+      "model": "glm-5.3-flash",
+      "supports_json_mode": true,
+      "note": "智谱 GLM OpenAI 兼容端点。快档用 glm-5.3-flash，主档 glm-5.3；带 thinking 的型号会明显增加延迟"
+    },
+    "doubao": {
+      "type": "openai_compatible",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "api_key": "${ARK_API_KEY}",
+      "model": "doubao-seed-2-1-pro-260915",
+      "supports_json_mode": true,
+      "note": "火山方舟豆包。model 填控制台的 Model ID / 接入点 ID，示例值带版本日期，以控制台为准。若服务返回 400 不接受 response_format，在配置页取消勾选「支持 JSON mode」，程序会自动降级为纯文本解析"
+    },
+    "aoai": {
+      "type": "azure_openai",
+      "base_url": "${AOAI_ENDPOINT}",
+      "api_key": "${AOAI_API_KEY}",
+      "model": "${AOAI_DEPLOYMENT}",
+      "api_version": "${AOAI_API_VERSION}",
+      "supports_json_mode": true,
+      "note": "Azure OpenAI，model 填部署名；中国区需单独申请"
+    }
+  },
+  "profiles": {
+    "openai-stt-qwen": {
+      "speech": "openai-stt",
+      "llm": "qwen",
+      "description": "非 Azure：OpenAI 兼容 ASR 网关 + 通义千问"
+    },
+    "generic-asr-deepseek": {
+      "speech": "generic-asr",
+      "llm": "deepseek",
+      "description": "非 Azure：任意 HTTP ASR 网关 + DeepSeek"
+    },
+    "bailian-qwen-deepseek": {
+      "speech": "bailian-qwen-asr",
+      "llm": "deepseek",
+      "description": "非 Azure：百炼 qwen3-asr-flash 语音识别 + DeepSeek"
+    },
+    "text-only-qwen": {
+      "speech": "",
+      "llm": "qwen",
+      "description": "单边方案：停用 ASR，只用大模型手动补一句"
+    },
+    "asr-only-qwen": {
+      "speech": "openai-stt",
+      "llm": "",
+      "description": "单边方案：停用大模型，只做语音转写记录"
+    },
+    "azure-cn-qwen": {
+      "speech": "azure-cn",
+      "llm": "qwen",
+      "description": "默认：中国区语音 + 通义，国内直连"
+    },
+    "azure-cn-deepseek": {
+      "speech": "azure-cn",
+      "llm": "deepseek",
+      "description": "中国区语音 + DeepSeek"
+    },
+    "azure-global-aoai": {
+      "speech": "azure-global",
+      "llm": "aoai",
+      "description": "全 Azure，企业合规场景"
+    },
+    "offline": {
+      "speech": "local-whisper",
+      "llm": "deepseek",
+      "description": "音频不出本机，LLM 仍需出网"
+    },
+    "dev-free": {
+      "speech": "azure-cn",
+      "llm": "qwen",
+      "description": "开发调试，用 Speech 免费层"
+    }
+  },
+  "selection": {
+    "speech": "bailian-qwen-asr",
+    "llm": "qwen"
+  }
+}
